@@ -1,10 +1,18 @@
 const mongoose = require("mongoose");
 
-const mongoURI = 'mongodb://localhost:27017/resto_backend';
+// Load environment variables
+require('dotenv').config();
+
+// MongoDB URI from environment variables
+const mongoURI = process.env.MONGO_URI || 'mongodb+srv://indrajapatil2204_db_user:ReserveDine22@cluster0.fcixtu1.mongodb.net/indrajasDineReserve22?retryWrites=true&w=majority&appName=Cluster0';
+
 async function connectToMongo(){
-    await mongoose
-        .connect(mongoURI)
-        .then(() => console.log("Connected to MongoDB successfully"))
-        .catch((err) => console.log(err));
+    try {
+        await mongoose.connect(mongoURI);
+        console.log("Connected to MongoDB successfully");
+    } catch (err) {
+        console.error("MongoDB connection error:", err);
+        throw err;
+    }
 }
 module.exports = connectToMongo;
