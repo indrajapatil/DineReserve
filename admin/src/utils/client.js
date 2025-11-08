@@ -1,7 +1,7 @@
 // API Client for DineReserve Admin Dashboard
 // Centralized module for all admin API requests
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://dinereserve.onrender.com/api';
 
 /**
  * Get admin auth token from localStorage
