@@ -1,7 +1,7 @@
 // API Client for DineReserve Backend
 // Centralized module for all API requests
 
-const API_BASE_URL = 'https://dinereserve.onrender.com';
+const API_BASE_URL = 'https://dinereserve.onrender.com/api';
 
 /**
  * Generic fetch wrapper with error handling
