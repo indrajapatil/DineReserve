@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getUserEmailFromStorage, getUserReservations } from '../utils/client';
 
 const ReservationHistory = () => {
   const navigate = useNavigate();
@@ -7,7 +8,7 @@ const ReservationHistory = () => {
   const [loading, setLoading] = useState(true);
 
   // 🔹 Fetch email from localStorage (saved during login)
-  const userEmail = localStorage.getItem('userEmail');
+  const userEmail = getUserEmailFromStorage();
 
   useEffect(() => {
     if (!userEmail) {
@@ -15,17 +16,20 @@ const ReservationHistory = () => {
       return;
     }
 
-    fetch(`http://localhost:5000/api/reservation/user/${userEmail}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setReservations(data.data);
-        } else {
-          console.error('Failed to fetch reservations:', data.error);
-        }
-      })
-      .catch(err => console.error('Error fetching reservations:', err))
-      .finally(() => setLoading(false));
+    const fetchReservations = async () => {
+      const result = await getUserReservations(userEmail);
+      if (result.success) {
+        // Handle both array and object formats
+        const reservationData = Array.isArray(result.data) ? result.data : (result.data?.data || []);
+        setReservations(reservationData);
+      } else {
+        console.error('Failed to fetch reservations:', result.error);
+        setReservations([]);
+      }
+      setLoading(false);
+    };
+
+    fetchReservations();
   }, [userEmail, navigate]);
 
   if (loading) return <p className="text-center mt-10">Loading your reservations...</p>;

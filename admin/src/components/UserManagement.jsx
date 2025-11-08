@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
+import { getAllUsers, updateUser, toggleBlockUser } from "../utils/client";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -8,9 +9,10 @@ const UserManagement = () => {
   // Fetch all users
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/user");
-      const data = await res.json();
-      if (data.success) setUsers(data.data);
+      const result = await getAllUsers();
+      if (result.success) {
+        setUsers(result.data);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -29,30 +31,27 @@ const UserManagement = () => {
     if (!newName || !newEmail || !newPhone) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/user/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, email: newEmail, phone: newPhone }),
-      });
+      const result = await updateUser(id, { name: newName, email: newEmail, phone: newPhone });
 
-      const data = await res.json();
-      if (data.success) {
+      if (result.success) {
         alert("User updated successfully!");
         fetchUsers();
+      } else {
+        alert("Update failed: " + result.error);
       }
     } catch (err) {
       console.error(err);
+      alert("Update failed");
     }
   };
 
   // Block/unblock user
-  const toggleBlockUser = async (id) => {
+  const toggleBlockStatus = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/user/${id}/block`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (data.success) fetchUsers();
+      const result = await toggleBlockUser(id);
+      if (result.success) {
+        fetchUsers();
+      }
     } catch (err) {
       console.error(err);
     }
@@ -124,7 +123,7 @@ const UserManagement = () => {
                       Edit
                     </button>
                     <button
-                      onClick={() => toggleBlockUser(user._id)}
+                      onClick={() => toggleBlockStatus(user._id)}
                       className={`${
                         user.status === "blocked"
                           ? "bg-green-500 hover:bg-green-600"

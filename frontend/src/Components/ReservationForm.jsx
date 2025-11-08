@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaFacebook, FaInstagram, FaReddit, FaTwitter, FaYoutube } from 'react-icons/fa';
+import { createReservation, incrementUserReservations, getUserFromStorage } from '../utils/client';
 
 const ReservationForm = () => {
   const [formData, setFormData] = useState({
@@ -12,18 +13,13 @@ const ReservationForm = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    try {
-      const u = JSON.parse(localStorage.getItem('user') || 'null');
-      if (!u || !u.email) {
-        // require login to make reservation
-        window.location.href = '/auth';
-        return;
-      }
-      setUser(u);
-    } catch (err) {
-      console.error('Invalid user in localStorage', err);
+    const u = getUserFromStorage();
+    if (!u || !u.email) {
+      // require login to make reservation
       window.location.href = '/auth';
+      return;
     }
+    setUser(u);
   }, []);
 
   const handleChanges = (e) => {
@@ -48,36 +44,27 @@ const ReservationForm = () => {
         seats: Number(formData.guests)
       };
 
-      const res = await fetch('http://localhost:5000/api/reservation/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const result = await createReservation(payload);
 
-      const data = await res.json();
-
-      if (res.ok) {
+      if (result.success) {
         alert('Reservation created successfully');
 
-        // ✅ STEP 3: Update user's reservation count (if we have user._id)
-        const userData = user || JSON.parse(localStorage.getItem('user') || 'null');
-        if (userData && userData._id) {
+        // ✅ Update user's reservation count (if we have user._id)
+        if (user && user._id) {
           try {
-            await fetch(`http://localhost:5000/api/user/${userData._id}/increment-reservations`, {
-              method: "POST",
-            });
+            await incrementUserReservations(user._id);
           } catch (updateErr) {
             console.error("Reservation count update failed", updateErr);
           }
         }
 
-  // Reset form
-  setFormData({ date: '', time: '', guests: '1' });
+        // Reset form
+        setFormData({ date: '', time: '', guests: '1' });
 
-  // Redirect user to their reservations page
-  navigate('/reservation');
+        // Redirect user to their reservations page
+        navigate('/reservation');
       } else {
-        alert('Failed: ' + (data.error || JSON.stringify(data)));
+        alert('Failed: ' + (result.error || 'Unknown error'));
       }
     } catch (err) {
       console.error('Submit error', err);

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 // navigation handled by shared Navbar
 import Navbar from './Navbar'
-
-const BACKEND = 'http://localhost:5000';
+import { getAllReservations } from '../utils/client';
 const Dashboard = () => {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,16 +11,10 @@ const Dashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${BACKEND}/api/reservation`, {
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': localStorage.getItem('adminAuth') || '' }
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Failed to fetch reservations');
-        setReservations([]);
-      } else {
+      const result = await getAllReservations();
+      if (result.success) {
         // map backend fields to local format
-        const mapped = data.data.map((r) => ({
+        const mapped = result.data.map((r) => ({
           id: r._id,
           date: r.date ? r.date.split('T')[0] : '',
           time: r.time,
@@ -29,6 +22,9 @@ const Dashboard = () => {
           status: r.status
         }));
         setReservations(mapped);
+      } else {
+        setError(result.error || 'Failed to fetch reservations');
+        setReservations([]);
       }
     } catch (err) {
       console.error('Fetch error', err);

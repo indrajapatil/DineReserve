@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Navbar from './Navbar'
+import { getAllReservations, updateReservation } from '../utils/client';
 
 
 // Total restaurant capacity
@@ -15,13 +16,10 @@ const ReservationManagement = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/reservation', {
-          headers: { 'Content-Type': 'application/json', 'x-admin-secret': localStorage.getItem('adminAuth') || '' }
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
+        const result = await getAllReservations();
+        if (result.success) {
           // map backend fields to frontend expectations
-          const mapped = data.data.map(r => ({
+          const mapped = result.data.map(r => ({
             id: r._id,
             name: r.name,
             phone: r.phone,
@@ -66,16 +64,11 @@ const ReservationManagement = () => {
         }
       }
 
-      const res = await fetch(`http://localhost:5000/api/reservation/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': localStorage.getItem('adminAuth') || '' },
-        body: JSON.stringify({ status })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const result = await updateReservation(id, { status });
+      if (result.success) {
         setReservations(reservations.map(r => (r.id === id ? { ...r, status } : r)));
       } else {
-        alert('Failed to update: ' + (data.error || JSON.stringify(data)));
+        alert('Failed to update: ' + (result.error || 'Unknown error'));
       }
     } catch (err) {
       console.error('Update error', err);
@@ -87,16 +80,11 @@ const ReservationManagement = () => {
   const cancelReservation = async (id) => {
     if (!window.confirm("Are you sure you want to cancel this reservation?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/reservation/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': localStorage.getItem('adminAuth') || '' },
-        body: JSON.stringify({ status: 'Cancelled' })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const result = await updateReservation(id, { status: 'Cancelled' });
+      if (result.success) {
         setReservations(reservations.map(r => (r.id === id ? { ...r, status: 'Cancelled' } : r)));
       } else {
-        alert('Failed to cancel: ' + (data.error || JSON.stringify(data)));
+        alert('Failed to cancel: ' + (result.error || 'Unknown error'));
       }
     } catch (err) {
       console.error('Cancel error', err);

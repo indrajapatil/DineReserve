@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { loginUser, registerUser, saveUserToStorage } from "../utils/client";
 
 const AuthForm = () => {
   const navigate = useNavigate(); // ✅ must be inside the component
@@ -25,37 +26,31 @@ const AuthForm = () => {
       return;
     }
 
-    const url = isLogin
-      ? "http://localhost:5000/api/user/login"
-      : "http://localhost:5000/api/user/register";
-
     try {
-      // Build payload without confirmPassword
-      const payload = isLogin
-        ? { email: formData.email, password: formData.password }
-        : { name: formData.name, email: formData.email, phone: formData.phone, password: formData.password };
+      let result;
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+      if (isLogin) {
+        // Login
+        result = await loginUser({
+          email: formData.email,
+          password: formData.password
+        });
+      } else {
+        // Register
+        result = await registerUser({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password
+        });
+      }
 
-      const data = await res.json();
-
-      if (res.ok) {
+      if (result.success) {
         alert(isLogin ? "Login Successful!" : "Registration Successful!");
 
-        // persist full user object and email so other parts (reservation form, history)
-        // can pick up logged-in user info
-        const userObj = data?.data || { email: formData.email };
-        try {
-          localStorage.setItem('user', JSON.stringify(userObj));
-        } catch (err) {
-          console.warn('Failed to store user object in localStorage', err);
-        }
-        const savedEmail = userObj?.email || formData.email;
-        if (savedEmail) localStorage.setItem('userEmail', savedEmail);
+        // persist full user object and email
+        const userObj = result.data || { email: formData.email };
+        saveUserToStorage(userObj);
 
         // clear form
         setFormData({
@@ -69,7 +64,7 @@ const AuthForm = () => {
         // ✅ Redirect to Hero page (which is your homepage)
         navigate("/home");
       } else {
-        alert(data.error || "Something went wrong!");
+        alert(result.error || "Something went wrong!");
       }
     } catch (err) {
       console.error(err);
